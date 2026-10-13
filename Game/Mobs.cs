@@ -6,7 +6,7 @@ namespace DrownPlatformer;
 
 /// <summary>
 /// Base of the creatures. They hurt the diver while touching him (a hit every half second), and die when their health runs out.
-/// The pictures face LEFT, so a creature moving right is drawn flipped.
+/// Most pictures face left; a creature whose picture faces right calls <see cref="SetArtFacesRight"/>. It is flipped to face where it moves.
 /// </summary>
 public abstract class Mob : FlxSprite
 {
@@ -22,14 +22,20 @@ public abstract class Mob : FlxSprite
     {
         Map = map;
         Diver = player;
-        SetFacingFlip(FlxDirection.Left, true, false);
+        SetArtFacesRight(false);
+    }
+
+    protected void SetArtFacesRight(bool right)
+    {
+        SetFacingFlip(FlxDirection.Right, !right, false);
+        SetFacingFlip(FlxDirection.Left, right, false);
         Facing = FlxDirection.Right;
     }
 
     protected void FaceMoving(float vx)
     {
-        if (vx > 0) Facing = FlxDirection.Left;
-        else if (vx < 0) Facing = FlxDirection.Right;
+        if (vx > 0) Facing = FlxDirection.Right;
+        else if (vx < 0) Facing = FlxDirection.Left;
     }
 
     protected float DistanceToDiver => Vector2.Distance(new Vector2(X, Y), new Vector2(Diver.X, Diver.Y));
@@ -134,6 +140,7 @@ public sealed class Puffer : FloaterMob
         LoadGraphic("images/puffer.png", animated: true, frameWidth: 32, frameHeight: 32);
         Animation.Add("float", new[] { 0, 1, 2, 3 }, 4);
         Animation.Play("float");
+        SetArtFacesRight(true);
         ContactDamage = 10;
         CollidesWithMap = true;
     }
@@ -197,6 +204,7 @@ public sealed class ElectricEel : Mob
         LoadGraphic("images/electric_eel.png", animated: true, frameWidth: 32, frameHeight: 16);
         Animation.Add("walk", new[] { 0, 1 }, 5);
         Animation.Play("walk");
+        SetArtFacesRight(true);
         Drag = new Vector2(25, 25);
         MaxVelocity = new Vector2(48, 48);
         Health = 2;
@@ -402,6 +410,7 @@ public sealed class Phantom : Mob
         Animation.Add("wait", new[] { 3 });
         Animation.Add("reveal", new[] { 3, 2, 1, 0 }, 25, looped: false);
         Animation.Play("wait");
+        SetArtFacesRight(true);
         MaxVelocity = new Vector2(Speed, Speed);
         Alpha = 0;
         Health = 1;

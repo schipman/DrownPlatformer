@@ -155,7 +155,7 @@ public class PlayState : FlxState
             // the diver comes in on the opposite side
             int enteredBy = side switch { Room.Left => Room.Right, Room.Right => Room.Left, Room.Up => Room.Down, _ => Room.Up };
             LoadRoom(next, enteredBy, playMusic: zone);
-            FlxG.Camera.Flash(Color.Black, zone ? 1.5f : 0.5f);
+            FlxG.Camera.Fade(Color.Black, zone ? 1.5f : 0.5f, fadeIn: true);   // the fade-out is still holding the screen black
             _player.ControlsEnabled = true;
             _switching = false;
         });
