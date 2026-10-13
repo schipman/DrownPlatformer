@@ -196,6 +196,7 @@ public sealed class SeaSnake : SeekerMob
 public sealed class ElectricEel : Mob
 {
     readonly float _homeX;
+    readonly Glow _glow = new(new Color(110, 190, 255), 30, 0.3f, 0.55f);
     int _direction;
 
     public ElectricEel(float x, float y, FlxTilemap m, Player p) : base(x, y, m, p)
@@ -217,6 +218,15 @@ public sealed class ElectricEel : Mob
         if (MathF.Abs(X - _homeX) >= 5 * Player.TileSize || Velocity.X == 0) _direction = 1 - _direction;
         Velocity.X = _direction == 0 ? 45 : -45;
         FaceMoving(Velocity.X);
+    }
+
+    public override void Draw()
+    {
+        // an electric glow, crackling
+        _glow.CenterOn(this);
+        _glow.Update(FlxG.Elapsed);
+        _glow.Draw();
+        base.Draw();
     }
 
     protected override void OnHurtDiver()

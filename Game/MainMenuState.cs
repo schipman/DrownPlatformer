@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using MonoFlixel;
@@ -14,7 +15,7 @@ public class MainMenuState : FlxState
     public const int Width = 320, Height = 240, Zoom = 3;
 
     FlxSprite _logo = null!;
-    FlxText _prompt = null!;
+    FlxText _prompt = null!, _subtitle = null!;
     bool _landed, _going;
     float _time;
 
@@ -34,6 +35,11 @@ public class MainMenuState : FlxState
         _logo.Moves = false;
         Add(_logo);
         FlxTween.Tween(_logo, new { Y = Height - 170f }, 10f, new TweenOptions { Ease = FlxEase.BounceOut, OnComplete = _ => Land() });
+
+        // PLATFORMER rides in under the logo
+        _subtitle = new FlxText(0, Height + 44, Width, "P L A T F O R M E R") { Alignment = FlxTextAlign.Center, Size = 16, Tint = new Color(150, 230, 255) };
+        _subtitle.SetBorderStyle(FlxTextBorderStyle.Outline, new Color(0, 40, 90), 1f);
+        Add(_subtitle);
 
         // the water wobble over the picture (not over the text)
         FlxG.PostProcess.Set(FlxPostProcess.Load("Wiggle", ("Amplitude", 0.0035f), ("Frequency", 18f), ("Speed", 2.5f)));
@@ -75,6 +81,13 @@ public class MainMenuState : FlxState
     {
         base.Update(elapsed);
         _time += elapsed;
+        _subtitle.Y = _logo.Y + 44;
+        if (_landed)
+        {
+            // after landing it shimmers: the color slides between aqua and white
+            float k = 0.5f + 0.5f * MathF.Sin(_time * 3f);
+            _subtitle.Tint = Color.Lerp(new Color(110, 215, 255), Color.White, k);
+        }
 
         // "press Z" blinks once the logo is down
         _prompt.Text = _landed ? (_time % 1.2f < 0.8f ? "Press Z  (or A) to start" : "") : "";

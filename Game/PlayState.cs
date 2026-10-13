@@ -211,11 +211,16 @@ public class PlayState : FlxState
         }
     }
 
+    /// <summary>
+    /// Moving between rooms plays the engine's tile transition: black diamonds sweep across the screen the way the diver is going
+    /// (circles, growing from the corner, when the zone changes), the next room is made while the screen is covered, and the tiles
+    /// sweep away again.
+    /// </summary>
     void Transition(int side)
     {
         _switching = true;
         _player.ControlsEnabled = false;
-        _player.Moves = false;                    // hold still (no sinking through the rock) while the screen fades
+        _player.Moves = false;
         _player.Velocity = Vector2.Zero;
         _player.Acceleration = Vector2.Zero;
         _player.Harpoon.ResetShots();
@@ -223,19 +228,36 @@ public class PlayState : FlxState
 
         bool zone = side == _room.Def.ZoneFlag;
         int next = _room.Neighbour(side);
-        float fade = zone ? 2f : 0.5f;
-        if (zone) FlxG.Sound.Music?.Stop();
+        if (zone) FlxG.Sound.Music?.FadeOut(1f);
 
-        FlxG.Camera.Fade(Color.Black, fade, onComplete: () =>
+        var direction = zone ? new Vector2(1, 1) : side switch
         {
-            // the diver comes in on the opposite side
+            Room.Left => new Vector2(-1, 0),
+            Room.Right => new Vector2(1, 0),
+            Room.Up => new Vector2(0, -1),
+            _ => new Vector2(0, 1),
+        };
+        var data = new TransitionData(TransitionType.Tiles, Color.Black, zone ? 1.1f : 0.5f, direction,
+            new TransitionTileData(zone ? FlxTransitionAssets.Circle : FlxTransitionAssets.Diamond, 32, 32));
+
+        var trans = new Transition(data);
+        trans.SetStatus(TransitionStatus.Empty);
+        OpenSubState(trans);
+        trans.FinishCallback = () =>
+        {
+            // the screen is covered: build the next room, the diver comes in on the opposite side
             int enteredBy = side switch { Room.Left => Room.Right, Room.Right => Room.Left, Room.Up => Room.Down, _ => Room.Up };
             LoadRoom(next, enteredBy, playMusic: zone);
-            FlxG.Camera.Fade(Color.Black, zone ? 1.5f : 0.5f, fadeIn: true);   // the fade-out is still holding the screen black
-            _player.Moves = true;
-            _player.ControlsEnabled = true;
-            _switching = false;
-        });
+            trans.FinishCallback = () =>
+            {
+                CloseSubState();
+                _player.Moves = true;
+                _player.ControlsEnabled = true;
+                _switching = false;
+            };
+            trans.Start(TransitionStatus.Out);
+        };
+        trans.Start(TransitionStatus.In);
     }
 
     void Die()

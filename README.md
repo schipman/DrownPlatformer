@@ -15,5 +15,8 @@ Run with `dotnet run`.
 * Start beside the crashed ship with a typewriter intro (Z skips/advances), a pause menu (ESC: resume, effects on/off, quit), and a
   Refraction screen effect (Content/Shaders/Refraction.fx, from the original refraction.fx, applied lightly).
 
+* Polish: PLATFORMER rides in under the logo; electric eels and shots glow (`Game/Glow.cs`, additive light sprites); rooms change with the
+  engine's tile transition (diamonds sweep the way the diver goes, circles for a zone change).
+
 ## Not yet ported
 Lighting (darkness + light mask), the intro dialog box, pause, the splash screen and the Xbox load screen.

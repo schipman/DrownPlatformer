@@ -13,6 +13,7 @@ public sealed class Projectile : FlxSprite
     public int Damage = 1;
     public bool Dying { get; private set; }
     ProjectileType _type;
+    readonly Glow _glow;
 
     public Projectile(ProjectileType type) : base(0, 0)
     {
@@ -22,6 +23,19 @@ public sealed class Projectile : FlxSprite
         Animation.Add("explode", new[] { 6, 7 }, 15, looped: false);
         CenterOrigin();
         Exists = false;
+
+        // a light riding on the shot: warm yellow for the harpoon, hot orange for the explosive
+        _glow = type == ProjectileType.Harpoon ? new Glow(new Color(255, 225, 90), 20, 0.15f, 0.6f) : new Glow(new Color(255, 110, 40), 26, 0.2f, 0.65f);
+        _glow.PulseSpeed = 25f;
+    }
+
+    public override void Draw()
+    {
+        // the burst brightens too; the light fades as the shot ends
+        _glow.CenterOn(this);
+        _glow.Update(FlxG.Elapsed);
+        _glow.Draw();
+        base.Draw();
     }
 
     public void Fire(float x, float y, AimDirection dir, float speed)
