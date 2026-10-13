@@ -16,6 +16,9 @@ public sealed class Room
     public readonly FlxGroup Back = new(), Front = new();
     public readonly FlxSprite?[] Exits = new FlxSprite?[4];
 
+    /// <summary>Where the diver starts: beside the crashed ship (null in rooms without one).</summary>
+    public Point? ShipSpawn;
+
     public Room(RoomDef def)
     {
         Def = def;
@@ -49,7 +52,11 @@ public sealed class Room
             var cells = rows[ty].Split(',');
             for (int tx = 0; tx < cells.Length; tx++)
                 if (cells[tx].Trim() == "1")
-                    Back.Add(new FlxSprite(tx * Player.TileSize, ty * Player.TileSize).LoadGraphic("images/playership_damaged.png"));
+                {
+                    var ship = new FlxSprite(tx * Player.TileSize, ty * Player.TileSize).LoadGraphic("images/playership_damaged.png");
+                    Back.Add(ship);
+                    ShipSpawn ??= new Point((int)(ship.X + ship.Width) + 6, (int)(ship.Y + ship.Height) - 32);
+                }
         }
     }
 

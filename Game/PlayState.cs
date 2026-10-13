@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using MonoFlixel;
 
 namespace DrownPlatformer;
@@ -11,7 +12,19 @@ public class PlayState : FlxState
 
     static readonly string[] Bgm = { "music/Coral_zone.wav", "music/kelp_forest_fix.wav" };
 
+    static readonly string[] IntroLines =
+    {
+        "SHIP STATUS: Critical damage...",
+        "The ship has crashed on the sea floor. I need to find a way back to the surface.",
+    };
+
     readonly int _startRoom;
+    readonly bool _intro;
+    FlxPostProcess? _wobble;
+    FlxGroup _dialog = null!;
+    FlxTypeText _dialogText = null!;
+    int _dialogLine;
+    bool _dialogOpen;
     DrownInput _input = null!;
     Player _player = null!;
     Room _room = null!;
@@ -22,7 +35,19 @@ public class PlayState : FlxState
     bool _switching;
     FlxSound? _ambience;
 
-    public PlayState(int startRoom = 1) { _startRoom = startRoom; }
+    public PlayState(int startRoom = 1, bool intro = true) { _startRoom = startRoom; _intro = intro; }
+
+    /// <summary>The water wobble over the picture (switched on the pause menu).</summary>
+    public bool WaterWobble
+    {
+        get => _wobble != null;
+        set
+        {
+            if (value == WaterWobble) return;
+            if (value) { _wobble = FlxPostProcess.Load("Wiggle", ("Amplitude", 0.0025f), ("Frequency", 18f), ("Speed", 2.5f)); FlxG.PostProcess.Add(_wobble); }
+            else { FlxG.PostProcess.Remove(_wobble!); _wobble = null; }
+        }
+    }
 
     public override void Create()
     {
@@ -46,12 +71,43 @@ public class PlayState : FlxState
         _hud.Add(new WeaponSlot(115, 6, _player, _player.Explosive));
         for (int i = 2; i < 7; i++) _hud.Add(new WeaponSlot(95 + i * 20, 6, _player, null));
 
-        // the water wobble over the picture
-        FlxG.PostProcess.Set(FlxPostProcess.Load("Wiggle", ("Amplitude", 0.0025f), ("Frequency", 18f), ("Speed", 2.5f)));
+        WaterWobble = true;
         _ambience = FlxG.Sound.Play("sfx/layered_dive_ambience.wav", 0.5f, looped: true, autoDestroy: false);
+
+        // the story box, on top of everything
+        _dialog = new FlxGroup { Visible = false };
+        var box = new FlxSprite((Width - 190) / 2f, 32).LoadGraphic("images/dialogbox.png");
+        box.ScrollFactor = Vector2.Zero;
+        _dialogText = new FlxTypeText(box.X + 15, box.Y + 8, 160, "") { ScrollFactor = Vector2.Zero, UseDefaultSound = true };
+        _dialog.Add(box);
+        _dialog.Add(_dialogText);
+        Add(_dialog);
 
         LoadRoom(_startRoom, null, playMusic: true);
         FlxG.Camera.Flash(Color.Black, 1.5f);
+        if (_intro && _startRoom == 1) ShowDialog(0);
+    }
+
+    void ShowDialog(int line)
+    {
+        _dialogLine = line;
+        _dialogOpen = true;
+        _dialog.Visible = true;
+        _player.ControlsEnabled = false;
+        _dialogText.ResetText(IntroLines[line]);
+        _dialogText.Start(0.03f, forceRestart: true);
+    }
+
+    /// <summary>Z (or A) finishes the line being typed; pressed again it goes to the next line, and after the last one closes the box.</summary>
+    void UpdateDialog()
+    {
+        bool confirm = FlxG.Keys.AnyJustPressed(Keys.Z, Keys.Enter) || FlxG.Gamepad.JustPressed(FlxGamepadInputID.A);
+        if (!confirm) return;
+        if (!_dialogText.IsComplete) { _dialogText.Skip(); return; }
+        if (_dialogLine + 1 < IntroLines.Length) { ShowDialog(_dialogLine + 1); return; }
+        _dialogOpen = false;
+        _dialog.Visible = false;
+        _player.ControlsEnabled = true;
     }
 
     /// <summary>Builds a room. <paramref name="enteredBy"/> is the side of the new room the diver came in by (null: the first room).</summary>
@@ -74,7 +130,8 @@ public class PlayState : FlxState
         _roomLayer.Add(_room.Front);
         _roomLayer.Add(_hud);
 
-        var at = _room.EntryFor(enteredBy ?? Room.Left);
+        // the first arrival is beside the crashed ship
+        var at = enteredBy == null && _room.ShipSpawn is Point ship ? ship : _room.EntryFor(enteredBy ?? Room.Left);
         _player.Reset(at.X, at.Y);
         _player.Harpoon.ResetShots();
         _player.Explosive.ResetShots();
@@ -94,7 +151,15 @@ public class PlayState : FlxState
         _health.Value = _player.Health / _player.MaxHealth * 100f;
         _oxygen.Value = _player.Oxygen / _player.MaxOxygen * 100f;
 
+        // ESC pauses
+        if (!_switching && !_dialogOpen && (FlxG.Keys.JustPressed(Keys.Escape) || FlxG.Gamepad.JustPressed(FlxGamepadInputID.Start)))
+        {
+            OpenSubState(new PauseState(this));
+            return;
+        }
+
         base.Update(elapsed);
+        if (_dialogOpen) UpdateDialog();
 
         if (!_switching)
         {
@@ -178,7 +243,7 @@ public class PlayState : FlxState
         _switching = true;
         _player.ControlsEnabled = false;
         _player.Moves = false;
-        FlxG.Camera.Fade(Color.Black, 1f, onComplete: () => FlxG.SwitchState(new PlayState(1), Width, Height, Zoom));
+        FlxG.Camera.Fade(Color.Black, 1f, onComplete: () => FlxG.SwitchState(new PlayState(1, intro: false), Width, Height, Zoom));
     }
 
     public override void Destroy()

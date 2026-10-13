@@ -12,5 +12,8 @@ Run with `dotnet run`.
   puffer, pain kelp, spike crustacean, floor claw, phantom and the nautilus boss.
 * HUD bars and weapon slots, ambience, footsteps and weapon sounds.
 
+* Start beside the crashed ship with a typewriter intro (Z skips/advances), a pause menu (ESC: resume, effects on/off, quit), and a
+  Refraction screen effect (Content/Shaders/Refraction.fx, from the original refraction.fx, applied lightly).
+
 ## Not yet ported
 Lighting (darkness + light mask), the intro dialog box, pause, the splash screen and the Xbox load screen.
