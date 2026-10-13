@@ -32,10 +32,25 @@ public sealed class Room
         Back.Add(Collide);
         Front.Add(Foreground);
 
+        if (def.HasEntities) LoadEntities();
+
         MakeExit(Left, def.ExitLeft, def.ExitLeftAt, 16, 32);
         MakeExit(Right, def.ExitRight, def.ExitRightAt, 16, 32);
         MakeExit(Up, def.ExitUp, def.ExitUpAt, 32, 16);
         MakeExit(Down, def.ExitDown, def.ExitDownAt, 32, 16);
+    }
+
+    /// <summary>Scenery objects placed from the Entities map (1: the damaged ship).</summary>
+    void LoadEntities()
+    {
+        var rows = System.IO.File.ReadAllLines(FlxAssets.Get($"maps/mapCSV_{Def.Map}_Entities.csv"));
+        for (int ty = 0; ty < rows.Length; ty++)
+        {
+            var cells = rows[ty].Split(',');
+            for (int tx = 0; tx < cells.Length; tx++)
+                if (cells[tx].Trim() == "1")
+                    Back.Add(new FlxSprite(tx * Player.TileSize, ty * Player.TileSize).LoadGraphic("images/playership_damaged.png"));
+        }
     }
 
     void MakeExit(int side, bool has, Point at, int w, int h)

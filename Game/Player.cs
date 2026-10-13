@@ -114,7 +114,7 @@ public class Player : FlxSprite
             {
                 _floating = true;
                 _floatCooldown = 0;
-                FlxG.Sound.Play("sfx/air_release.wav", 0.5f);
+                FlxG.Sound.Play("sfx/air_intake.wav", 0.5f);
             }
         }
 

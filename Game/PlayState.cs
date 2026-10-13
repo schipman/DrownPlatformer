@@ -15,10 +15,12 @@ public class PlayState : FlxState
     DrownInput _input = null!;
     Player _player = null!;
     Room _room = null!;
+    EnemyManager? _enemies;
     FlxSprite _backdrop = null!;
     ProgressBar _health = null!, _oxygen = null!;
     FlxGroup _roomLayer = null!, _hud = null!;
     bool _switching;
+    FlxSound? _ambience;
 
     public PlayState(int startRoom = 1) { _startRoom = startRoom; }
 
@@ -44,6 +46,10 @@ public class PlayState : FlxState
         _hud.Add(new WeaponSlot(115, 6, _player, _player.Explosive));
         for (int i = 2; i < 7; i++) _hud.Add(new WeaponSlot(95 + i * 20, 6, _player, null));
 
+        // the water wobble over the picture
+        FlxG.PostProcess.Set(FlxPostProcess.Load("Wiggle", ("Amplitude", 0.0025f), ("Frequency", 18f), ("Speed", 2.5f)));
+        _ambience = FlxG.Sound.Play("sfx/layered_dive_ambience.wav", 0.5f, looped: true, autoDestroy: false);
+
         LoadRoom(_startRoom, null, playMusic: true);
         FlxG.Camera.Flash(Color.Black, 1.5f);
     }
@@ -59,6 +65,8 @@ public class PlayState : FlxState
         _backdrop.LoadGraphic(def.Backdrop == "kelpBackdrop" ? "images/backdrop_test.png" : "images/backdrop.png");
 
         _roomLayer.Add(_room.Back);
+        _enemies = def.HasEnemies ? new EnemyManager(_room.Collide, _player, def.Map) : null;
+        if (_enemies != null) _roomLayer.Add(_enemies);
         _roomLayer.Add(_player);
         _roomLayer.Add(_player.Bubbles);
         _roomLayer.Add(_player.Harpoon);
@@ -106,7 +114,17 @@ public class PlayState : FlxState
     void CollideShots(Weapon weapon)
     {
         foreach (var p in weapon.Members)
-            if (p.Exists && !p.Dying && FlxG.Collide(_room.Collide, p)) p.Explode();
+        {
+            if (!p.Exists || p.Dying) continue;
+            if (FlxG.Collide(_room.Collide, p)) { p.Explode(); continue; }
+            if (_enemies == null) continue;
+            foreach (var m in _enemies.Mobs)
+                if (m.Exists && m.Alive && FlxObject.OverlapsPair(p, m))
+                {
+                    if (m.HitByShot(p.Damage)) p.Explode();
+                    break;
+                }
+        }
     }
 
     void CheckExits()
@@ -148,5 +166,12 @@ public class PlayState : FlxState
         _switching = true;
         _player.ControlsEnabled = false;
         FlxG.Camera.Fade(Color.Black, 1f, onComplete: () => FlxG.SwitchState(new PlayState(1), Width, Height, Zoom));
+    }
+
+    public override void Destroy()
+    {
+        _ambience?.Stop();
+        FlxG.PostProcess.Clear();
+        base.Destroy();
     }
 }

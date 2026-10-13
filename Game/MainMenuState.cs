@@ -4,49 +4,83 @@ using MonoFlixel;
 
 namespace DrownPlatformer;
 
-/// <summary>An empty main menu: a title and placeholder items to fill in.</summary>
+/// <summary>
+/// The title screen, from the original game's main menu: the underwater picture with the water wobble over it, the title theme, and
+/// the DROWN logo that rises from the bottom and bounces into place over ten seconds, ending with a flash and a thump.
+/// Z, ENTER, SPACE or the pad's A starts the game.
+/// </summary>
 public class MainMenuState : FlxState
 {
-    public const int Width = 640, Height = 360, Zoom = 2;
+    public const int Width = 320, Height = 240, Zoom = 3;
 
-    static readonly string[] Items = { "START", "OPTIONS", "QUIT" };
-    readonly FlxText[] _labels = new FlxText[Items.Length];
-    int _selected;
+    FlxSprite _logo = null!;
+    FlxText _prompt = null!;
+    bool _landed, _going;
+    float _time;
 
     public override void Create()
     {
-        FlxG.Game.Window.Title = "Drown Platformer";
-        FlxG.Cameras.BgColor = new Color(8, 16, 32);
+        FlxG.Game.Window.Title = "Drown";
+        FlxG.Cameras.BgColor = new Color(0, 20, 50);
+        FlxG.Mouse.Visible = false;
 
-        Add(new FlxText(0, 70, Width, "DROWN PLATFORMER") { Alignment = FlxTextAlign.Center, Size = 16 });
-        for (int i = 0; i < Items.Length; i++)
-        {
-            _labels[i] = new FlxText(0, 160 + i * 24, Width, Items[i]) { Alignment = FlxTextAlign.Center };
-            Add(_labels[i]);
-        }
-        Refresh();
+        var backdrop = new FlxSprite(0, 0).LoadGraphic("images/mainscreen.png");
+        backdrop.Moves = false;
+        Add(backdrop);
+
+        // the logo starts below the screen and rises 170 pixels, bouncing as it lands
+        _logo = new FlxSprite(Width / 2f - 100, Height).LoadGraphic("images/DrownLogo.png");
+        _logo.DrawAfterPostProcess = true;
+        _logo.Moves = false;
+        Add(_logo);
+        FlxTween.Tween(_logo, new { Y = Height - 170f }, 10f, new TweenOptions { Ease = FlxEase.BounceOut, OnComplete = _ => Land() });
+
+        // the water wobble over the picture (not over the text)
+        FlxG.PostProcess.Set(FlxPostProcess.Load("Wiggle", ("Amplitude", 0.0035f), ("Frequency", 18f), ("Speed", 2.5f)));
+
+        _prompt = new FlxText(0, Height - 40, Width, "") { Alignment = FlxTextAlign.Center, Tint = new Color(190, 235, 255) };
+        var credits = new FlxText(0, Height - 25, Width, "A game by Scott Chipman and Gavin Allen") { Alignment = FlxTextAlign.Center, Tint = new Color(170, 215, 235) };
+        var hint = new FlxText(0, Height - 12, Width, "ESC: quit") { Alignment = FlxTextAlign.Center, Tint = new Color(110, 160, 190) };
+        Add(_prompt);
+        Add(credits);
+        Add(hint);
+
+        // the title theme; the first frame can take a moment while the MP3 is decoded
+        FlxG.Sound.PlayMusic("music/title_theme.mp3", 0.4f);
+
+        FlxG.Camera.Fade(Color.Black, 1.5f, fadeIn: true);
     }
 
-    void Refresh()
+    void Land()
     {
-        for (int i = 0; i < _labels.Length; i++)
+        _landed = true;
+        FlxG.Sound.Play("sfx/drown_logobump.wav");
+        FlxG.Camera.Flash(Color.Aqua, 0.5f);
+    }
+
+    void Start()
+    {
+        if (_going) return;
+        _going = true;
+        FlxG.Sound.Music?.FadeOut(1f);
+        FlxG.Camera.Fade(Color.Black, 1f, onComplete: () =>
         {
-            _labels[i].SetFormat(8, i == _selected ? Color.Yellow : Color.Gray, FlxTextAlign.Center);
-            _labels[i].Text = (i == _selected ? "> " : "") + Items[i];
-        }
+            FlxG.Sound.Music?.Stop();
+            FlxG.PostProcess.Clear();
+            FlxG.SwitchState(new PlayState(), PlayState.Width, PlayState.Height, PlayState.Zoom);
+        });
     }
 
     public override void Update(float elapsed)
     {
         base.Update(elapsed);
-        if (FlxG.Keys.JustPressed(Keys.Down) || FlxG.Keys.JustPressed(Keys.S)) { _selected = (_selected + 1) % Items.Length; Refresh(); }
-        if (FlxG.Keys.JustPressed(Keys.Up) || FlxG.Keys.JustPressed(Keys.W)) { _selected = (_selected + Items.Length - 1) % Items.Length; Refresh(); }
-        if (FlxG.Keys.JustPressed(Keys.Enter) || FlxG.Keys.JustPressed(Keys.Space))
-        {
-            if (_selected == 0) FlxG.SwitchState(new PlayState(), PlayState.Width, PlayState.Height, PlayState.Zoom);
-            else if (_selected == Items.Length - 1) FlxG.Game.Exit();
-            // START / OPTIONS: nothing yet
-        }
+        _time += elapsed;
+
+        // "press Z" blinks once the logo is down
+        _prompt.Text = _landed ? (_time % 1.2f < 0.8f ? "Press Z  (or A) to start" : "") : "";
+
+        if (_going) return;
+        if (FlxG.Keys.AnyJustPressed(Keys.Z, Keys.Enter, Keys.Space) || FlxG.Gamepad.JustPressed(FlxGamepadInputID.A)) Start();
         if (FlxG.Keys.JustPressed(Keys.Escape)) FlxG.Game.Exit();
     }
 }

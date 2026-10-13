@@ -1,4 +1,16 @@
 # Drown Platformer
 
-Built on the MonoFlixel engine (`Flixel/`, MIT; a C#/MonoGame port of HaxeFlixel) with its post-process shaders (`Content/Shaders`).
-`Game/MainMenuState.cs` is the empty main menu to build from. Run with `dotnet run`.
+A port of the original XNA game (D:\PROJECTS\DrownPlatformer) to the MonoFlixel engine (`Flixel/`, MIT; a C#/MonoGame port of HaxeFlixel).
+Run with `dotnet run`.
+
+## What is ported
+* Title screen (`Game/MainMenuState.cs`): logo bounce, title theme, water wobble.
+* 25 rooms (`Game/RoomData.cs` was generated from the original RoomManager switch; maps are the original CSV layers in `Assets/maps`),
+  with exits, zone changes (new music, longer fade) and the diver coming in on the opposite side.
+* Diver (`Game/Player.cs`): arrows move/aim, X jump, Z fire, C weapon, TAB float; oxygen and health; harpoon and explosive weapons.
+* Creatures (`Game/Mobs.cs`, placed from each room's Enemies map): crab, sea snail, sea snake, barracuda, electric eel, man o' war,
+  puffer, pain kelp, spike crustacean, floor claw, phantom and the nautilus boss.
+* HUD bars and weapon slots, ambience, footsteps and weapon sounds.
+
+## Not yet ported
+Lighting (darkness + light mask), the intro dialog box, pause, the splash screen and the Xbox load screen.
