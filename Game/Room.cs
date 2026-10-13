@@ -59,7 +59,7 @@ public sealed class Room
         var s = new FlxSprite(at.X, at.Y) { Visible = false, Moves = false };
         s.MakeGraphic(w, h, Color.Transparent);
         // a little bigger on the room side, so the diver pressed against the rock beside an exit still touches it
-        const int Grow = 4;
+        const int Grow = 2;
         if (side == Left) s.Width += Grow;
         else if (side == Right) { s.X -= Grow; s.Width += Grow; }
         else if (side == Up) s.Height += Grow;

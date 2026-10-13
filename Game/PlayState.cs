@@ -132,7 +132,17 @@ public class PlayState : FlxState
         for (int side = 0; side < 4; side++)
         {
             var exit = _room.Exits[side];
-            if (exit != null && _room.Neighbour(side) > 0 && FlxObject.OverlapsPair(_player, exit)) { Transition(side); return; }
+            if (exit == null || _room.Neighbour(side) <= 0 || !FlxObject.OverlapsPair(_player, exit)) continue;
+
+            // only when pushing into it (the diver may arrive standing beside the exit of the room he came from)
+            bool pushing = side switch
+            {
+                Room.Left => _player.Acceleration.X < 0,
+                Room.Right => _player.Acceleration.X > 0,
+                Room.Up => _player.Velocity.Y < 0,
+                _ => _player.Velocity.Y > 0,
+            };
+            if (pushing) { Transition(side); return; }
         }
     }
 
@@ -140,6 +150,7 @@ public class PlayState : FlxState
     {
         _switching = true;
         _player.ControlsEnabled = false;
+        _player.Moves = false;                    // hold still (no sinking through the rock) while the screen fades
         _player.Velocity = Vector2.Zero;
         _player.Acceleration = Vector2.Zero;
         _player.Harpoon.ResetShots();
@@ -156,6 +167,7 @@ public class PlayState : FlxState
             int enteredBy = side switch { Room.Left => Room.Right, Room.Right => Room.Left, Room.Up => Room.Down, _ => Room.Up };
             LoadRoom(next, enteredBy, playMusic: zone);
             FlxG.Camera.Fade(Color.Black, zone ? 1.5f : 0.5f, fadeIn: true);   // the fade-out is still holding the screen black
+            _player.Moves = true;
             _player.ControlsEnabled = true;
             _switching = false;
         });
@@ -165,6 +177,7 @@ public class PlayState : FlxState
     {
         _switching = true;
         _player.ControlsEnabled = false;
+        _player.Moves = false;
         FlxG.Camera.Fade(Color.Black, 1f, onComplete: () => FlxG.SwitchState(new PlayState(1), Width, Height, Zoom));
     }
 
