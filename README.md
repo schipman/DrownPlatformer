@@ -20,3 +20,7 @@ Run with `dotnet run`.
 
 ## Not yet ported
 Lighting (darkness + light mask), the intro dialog box, pause, the splash screen and the Xbox load screen.
+
+## Building an installer
+
+`installer/build-installer.ps1 -Version 0.1.0` (needs the .NET 8 SDK and Inno Setup 6) publishes a self-contained win-x64 build, with the .NET runtime bundled, and writes `dist/DrownPlatformer-Setup-<version>.exe`.
