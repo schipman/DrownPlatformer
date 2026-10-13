@@ -12,7 +12,7 @@ namespace DrownPlatformer;
 public sealed class PauseState : FlxSubState
 {
     /// <summary>The effects on the menu (names from FlxPostProcessLibrary), besides the water wobble.</summary>
-    static readonly string[] Effects = { "Refraction", "Bloom", "Vignette", "ChromaticAberration", "Desaturate", "NightVision", "VHS", "CRT" };
+    static readonly string[] Effects = { "Refraction", "Bloom", "Vignette", "ChromaticAberration", "Desaturate", "NightVision", "VHS", "CRT Flat" };
 
     readonly PlayState _play;
     readonly List<(string Label, System.Func<string> Value, System.Action Activate)> _items = new();
@@ -52,6 +52,7 @@ public sealed class PauseState : FlxSubState
     {
         "ChromaticAberration" => "Chromatic aberration",
         "NightVision" => "Night vision",
+        "CRT Flat" => "CRT",
         _ => name,
     };
 

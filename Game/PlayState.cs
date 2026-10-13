@@ -44,7 +44,7 @@ public class PlayState : FlxState
         set
         {
             if (value == WaterWobble) return;
-            if (value) { _wobble = FlxPostProcess.Load("Wiggle", ("Amplitude", 0.0025f), ("Frequency", 18f), ("Speed", 2.5f)); FlxG.PostProcess.Add(_wobble); }
+            if (value) { _wobble = FlxPostProcess.Load("Wiggle", ("Amplitude", 0.0015f), ("Frequency", 18f), ("Speed", 2.5f)); FlxG.PostProcess.Add(_wobble); }
             else { FlxG.PostProcess.Remove(_wobble!); _wobble = null; }
         }
     }
